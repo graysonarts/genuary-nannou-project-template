@@ -33,6 +33,10 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     label(app, model, &draw);
     draw.to_frame(app, &frame).unwrap();
+
+    if model.save_frame.get() {
+        model.save_current_frame(app, &frame);
+    }
 }
 
 pub fn sketch_key_released(_app: &App, _model: &mut Model, _key: Key) {

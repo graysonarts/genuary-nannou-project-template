@@ -3,9 +3,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use nannou::prelude::*;
+use nannou::{color::Alpha, prelude::*};
 
-use crate::model::{Model, RunMode};
+use crate::{
+    model::{Model, RunMode},
+    sketch_key_released,
+};
 
 pub fn projname() -> Option<String> {
     let result = std::env::current_exe()
@@ -15,7 +18,6 @@ pub fn projname() -> Option<String> {
         .map(Path::file_stem)?
         .map(OsStr::to_string_lossy)
         .map(|name| format!("{} {}", name, env!("VERGEN_GIT_DESCRIBE")));
-    // .map(|x| x.map(|y| y.to_string()));
 
     result
 }
@@ -42,19 +44,44 @@ pub fn label(app: &App, model: &Model, draw: &Draw) -> () {
     draw.rect()
         .xy(bottom_bar_rect.xy())
         .wh(bottom_bar_rect.wh())
-        .color(BLACK);
+        .color(Alpha {
+            color: BLACK,
+            alpha: 0.75,
+        });
 
     // Draw Label
-    draw.text(&model.label)
-        .color(WHITE)
-        .font_size(12)
-        .align_text_bottom()
-        .right_justify()
-        .wh(text_rect.wh());
+    match model.run_mode {
+        RunMode::Production => draw.text(&model.label),
+        RunMode::Debug => draw.text(&format!("(DEBUG) {}", model.label)),
+    }
+    .color(WHITE)
+    .font_size(12)
+    .align_text_bottom()
+    .right_justify()
+    .wh(text_rect.wh());
 }
 
-pub fn key_released(_app: &App, _model: &mut Model, _key: Key) {}
+pub fn key_released(app: &App, model: &mut Model, key: Key) {
+    match key {
+        Key::S => model.save_next_frame(),
+        Key::M => model.next_run_mode(),
+        _ => sketch_key_released(app, model, key),
+    };
+}
 
 pub fn setup_logging() {
     pretty_env_logger::init();
+}
+
+// From nannou example code
+pub fn captured_frame_path(app: &App, frame: &Frame) -> std::path::PathBuf {
+    // Create a path that we want to save this frame to.
+    app.project_path()
+        .expect("failed to locate `project_path`")
+        // Capture all frames to a directory called `/<path_to_nannou>/nannou/simple_capture`.
+        .join(app.exe_name().unwrap())
+        // Name each file after the number of the frame.
+        .join(format!("{:03}", frame.nth()))
+        // The extension will be PNG. We also support tiff, bmp, gif, jpeg, webp and some others.
+        .with_extension("png")
 }
