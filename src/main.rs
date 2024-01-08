@@ -3,11 +3,23 @@ mod model;
 use framework::*;
 use model::*;
 use nannou::prelude::*;
+use once_cell::sync::Lazy;
 
-#[cfg(feature = "small")]
-const SIZE: u32 = 512;
 #[cfg(not(feature = "small"))]
-const SIZE: u32 = 1024;
+mod settings {
+    pub const SCALE: u32 = 2;
+    pub const SIZE: u32 = 512 * SCALE;
+}
+#[cfg(feature = "small")]
+mod settings {
+    pub const SCALE: u32 = 1;
+    pub const SIZE: u32 = 512 * SCALE;
+}
+
+use settings::*
+
+pub static ORIGIN_OFFSET: Lazy<Vec3> =
+Lazy::new(|| Vec3::new((SIZE as f32) / 2.0, (SIZE as f32) / 2.0, 0.0));
 
 fn main() {
     setup_logging();
